@@ -70,7 +70,7 @@ func InitWithDir(dir string) (err error) {
 	env.Clean()
 
 	// 加载系统的环境变量
-	var result map[string]string
+	result := make(map[string]string)
 	for _, value := range os.Environ() {
 		parts := strings.SplitN(value, "=", 2)
 		key := strings.TrimSpace(parts[0])
