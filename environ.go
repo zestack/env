@@ -33,6 +33,7 @@ func (e *environ) Load(filenames ...string) error {
 	return err
 }
 
+// Save 保存数据到缓存的环境变量里面
 func (e *environ) Save(data map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

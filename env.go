@@ -8,29 +8,64 @@ import (
 	"time"
 )
 
+// Signer 签名查询器
+//
+// 用于操作相同前缀但需要区分不同场景的环境变量时十分有用，比如
+// 我们通过环境变量文件配置缓存配置
+//
+//	CACHE_DRIVER=redis
+//	CACHE_DATABASE=1
+//	CACHE_SCOPE=app:
+//	CACHE_BOOK_DATABASE=10
+//	CACHE_BOOK_SCOPE=app:books:
+//
+// 那么我们就可以十分方便的使用:
+//
+//	cache := env.Signed("CACHE", "BOOK")
+//	cache.String("DRIVER") // redis
+//	cache.Int("DATABASE")  // 10
+//	cache.String("SCOPE")  // app:books:
+//
+// 这样就方便我们对环境变量简单分组分场景使用了。
 type Signer interface {
+	// Lookup 返回指定键的数据，只有存在指定的环境变量并且其值不为空时，
+	// 第二个返回值为 true，其它情况下，均返回 false，与方法 Exists 有所区别。
 	Lookup(key string) (string, bool)
+	// Exists 判断指定键的数据是否存在
+	// 只要存在键名就返回 true，不存在返回 false。
 	Exists(key string) bool
+	// String 返回指定键的数据的字符串形式，当数据不存在或值为空时返回默认值
 	String(key string, fallback ...string) string
+	// Bytes 返回指定键的数据的字节切片值，当数据不存在或值为空时返回默认值
 	Bytes(key string, fallback ...[]byte) []byte
+	// Int 返回指定键的数据的整数值，当数据不存在或值为空时返回默认值
 	Int(key string, fallback ...int) int
+	// Duration 返回指定键的数据的时长值，当数据不存在或值为空时返回默认值
 	Duration(key string, fallback ...time.Duration) time.Duration
+	// Bool 返回指定键的数据的布尔值，当数据不存在或值为空时返回默认值
 	Bool(key string, fallback ...bool) bool
+	// List 返回指定键的数据的字符串列表（使用英文逗号分割），当数据不存在或值为空时返回默认值
 	List(key string, fallback ...[]string) []string
+	// Map 将具体相同前缀的键的数据聚合起来返回
 	Map(prefix string) map[string]string
+	// Where 返回通过自定义函数过滤的数据
 	Where(filter func(name, value string) bool) map[string]string
+	// Fill 使用环境变量填充结构体
 	Fill(structure any) error
 }
 
 type Environ interface {
 	Signer
+	// Load 加载定义环境变量的文件
 	Load(filenames ...string) error
+	// Signed 返回复合一个规则的签名查询器
 	Signed(prefix, category string) Signer
+	// Clean 清理缓存的所有数据
 	Clean()
 }
 
 var (
-	// 缓存的环境变量
+	// 全局缓存的环境变量
 	env = New().(*environ)
 	// 环境变量文件 `.env` 所处的目录
 	// 一般位于程序的工作目录
